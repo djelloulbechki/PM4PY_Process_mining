@@ -114,7 +114,8 @@ def _performance_analytics(event_log, df, case_col, act_col, time_col):
 
 def _conformance_checking(event_log):
     try:
-        net, im, fm = inductive_miner.apply(event_log)
+        tree = inductive_miner.apply(event_log)
+        net, im, fm = pm4py.convert_to_petri_net(tree)
         replayed = token_replay.apply(event_log, net, im, fm)
     except Exception as exc:
         return {"type": "conformance_checking", "status": "error", "message": f"Conformance analysis failed: {exc}", "results": {}}
