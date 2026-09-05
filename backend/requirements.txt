@@ -1,0 +1,17 @@
+fastapi==0.116.1
+uvicorn[standard]==0.35.0
+pydantic==2.11.7
+pydantic-settings==2.10.1
+python-multipart==0.0.20
+supabase==2.18.1
+celery[redis]==5.5.3
+redis==6.4.0
+pandas==2.3.2
+pm4py==2.7.17
+python-dateutil==2.9.0.post0
+httpx==0.28.1
+orjson==3.11.2
+tenacity==9.1.2
+cryptography>=43,<46
+openpyxl>=3.1,<4
+stripe>=11.0.0
