@@ -3,6 +3,7 @@
 -- Run after 006_payg_billing.sql
 
 -- 1. Update bootstrap_organization to use billing_accounts
+DROP FUNCTION IF EXISTS create_analysis_job_atomic(uuid, uuid, uuid, text);
 create or replace function public.bootstrap_organization(p_name text)
 returns uuid
 language plpgsql
