@@ -16,12 +16,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
 
       - name: Install & Build Frontend
         run: |
           cd frontend
-          npm ci
+          npm install
           npm run build --if-present
 
   deploy:
