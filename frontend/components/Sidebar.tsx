@@ -19,7 +19,7 @@ const nav = [
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/datasets", label: "Datasets", icon: Database },
   { href: "/analyses", label: "Analyses", icon: Activity },
-  { href: "/connectors", label: "Connectors", icon: Plug },
+  { href: "/marketplace", label: "Marketplace", icon: Plug },
   { href: "/billing", label: "Billing", icon: CreditCard },
 ];
 

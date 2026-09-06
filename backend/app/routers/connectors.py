@@ -100,29 +100,38 @@ def sync_connector(connector_id: str, body: OdooSyncRequest, user: dict = Depend
     if not row:
         raise HTTPException(404, "Connector not found.")
     _member(sb, row["organization_id"], user["sub"])
-    if row["connector_type"] != "odoo":
-        raise HTTPException(400, "This sync flow currently supports Odoo only.")
+    ctype = row["connector_type"]
     try:
-        events = get_connector("odoo", _connector_config(row)).fetch_events(body.mapping)
+        events = get_connector(ctype, _connector_config(row)).fetch_events(body.mapping)
     except ConnectorError as exc:
         sb.table("data_sources").update({"status": "error", "last_error": str(exc)[:500]}).eq("id", connector_id).execute()
         raise HTTPException(400, str(exc))
     if not events:
-        raise HTTPException(400, "No valid events were returned by Odoo.")
+        raise HTTPException(400, f"No valid events were returned by {ctype}.")
 
     import csv, io, json
     import pandas as pd
     frame = pd.DataFrame(events)
     content = io.StringIO(); frame.to_csv(content, index=False)
-    dataset_name = body.dataset_name or f"Odoo · {body.mapping.get('model', 'event log')}"
-    path = f"{row['organization_id']}/{row['project_id']}/{connector_id}_{body.mapping.get('model','events').replace('.', '_')}.csv"
+    label = (
+        body.mapping.get("model")
+        or body.mapping.get("object_type")
+        or body.mapping.get("sobject")
+        or body.mapping.get("entity")
+        or body.mapping.get("module")
+        or body.mapping.get("board_id")
+        or "events"
+    )
+    safe = str(label).replace(".", "_").replace("/", "_")[:80]
+    dataset_name = body.dataset_name or f"{ctype.title()} · {label}"
+    path = f"{row['organization_id']}/{row['project_id']}/{connector_id}_{safe}.csv"
     sb.storage.from_("datasets").upload(path=path, file=content.getvalue().encode(), file_options={"content-type":"text/csv", "upsert":"true"})
     schema = {col: str(frame[col].dtype) for col in frame.columns}
     inserted = sb.table("datasets").insert({
         "organization_id": row["organization_id"], "project_id": row["project_id"], "name": dataset_name,
         "storage_path": path, "row_count": len(frame), "file_size_bytes": len(content.getvalue().encode()),
-        "status": "ready", "created_by": user["sub"], "source_type": "odoo", "source_id": connector_id,
-        "schema_json": schema, "ingestion_metadata": {"connector":"odoo", "model":body.mapping.get("model"), "mapping":body.mapping},
+        "status": "ready", "created_by": user["sub"], "source_type": ctype, "source_id": connector_id,
+        "schema_json": schema, "ingestion_metadata": {"connector": ctype, "model":body.mapping.get("model"), "mapping":body.mapping},
     }).execute()
     sb.table("data_sources").update({"status":"connected", "last_sync_at":"now()", "last_error":None}).eq("id", connector_id).execute()
     return {"dataset_id": inserted.data[0]["id"], "events": len(events), "status": "ready"}
